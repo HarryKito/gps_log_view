@@ -1,5 +1,5 @@
 % Parameters control by User
-hdop_threshold = 1.5;
+hdop_threshold = 0.6;
 
 hdop = [];
 lat = [];
@@ -30,6 +30,9 @@ Alt = positions.Alt;
 % 
 hdop_normalized = (hdop - min(hdop)) / (max(hdop) - min(hdop));
 cmap = [hdop_normalized, 1 - hdop_normalized, zeros(length(hdop_normalized), 1)];
+
+hdop_diff = abs(diff(hdop));
+high_hdop_change_indices = find(hdop_diff > hdop_threshold) + 1;
 
 figure;
 hold on;
