@@ -2,7 +2,7 @@
 Fs = 100;  % Assumed IMU sample rate (Hz)
 Fc = 5;    % Cutoff frequency for low-pass filter (Hz)
 
-binary_log_file = "Research/fail.bin";
+binary_log_file = "Research/fail.BIN";
 bin = ardupilotreader(binary_log_file);
  % ----------------------------------- %
 % IMU
@@ -33,7 +33,14 @@ ImuMsg = readMessages(bin,'MessageName',{'IMU'});
 AHRMsg = readMessages(bin, 'MessageName', {'AHR2'});
 
 Gps1Data = GpsMsg.MsgData{1,1};
-Gps2Data = GpsMsg.MsgData{2,1};
+
+% In case using under 2 GPS module.
+if length(GpsMsg.MsgData) >= 2
+    Gps2Data = GpsMsg.MsgData{2,1};
+else
+    Gps2Data = [];
+end
+
 ImuData = ImuMsg.MsgData{1,1};
 AhrsData = AHRMsg.MsgData{1,1};
 % GpsData
@@ -42,24 +49,42 @@ AhrsData = AHRMsg.MsgData{1,1};
 % Lat   = Latitude
 % Lng   = Longitude
 % Alt   = Altitude (Based on GPS, not barometer)
+
 IMU_acc = ImuData(:,{'GyrX','GyrY','GyrZ','AccX','AccY','AccZ'});
 positions1 = Gps1Data(:, {'NSats','HDop','Lat','Lng','Alt'});
-positions2 = Gps2Data(:, {'NSats','HDop','Lat','Lng','Alt'});
-Yaw = AhrsData(:,{'Yaw'});
 
+% In case using under 2 GPS module.
+if ~isempty(Gps2Data)
+    positions2 = Gps2Data(:, {'NSats','HDop','Lat','Lng','Alt'});
+else
+    positions2 = table();
+end
+Yaw = AhrsData(:,{'Yaw'});
 yaw = Yaw.Yaw;
 
+% GPS No.1
 Lat1 = positions1.Lat;
 Lng1 = positions1.Lng;
 Alt1 = positions1.Alt;
 HDop1 = positions1.HDop;
 NSats1 = positions1.NSats;
+n_points = length(Lat1);
 
-Lat2 = positions2.Lat;
-Lng2 = positions2.Lng;
-Alt2 = positions2.Alt;
-HDop2 = positions2.HDop;
-NSats2 = positions2.NSats;
+% In case using under 2 GPS module.
+% GPS No.2
+if ~isempty(positions2)
+    Lat2 = positions2.Lat;
+    Lng2 = positions2.Lng;
+    Alt2 = positions2.Alt;
+    HDop2 = positions2.HDop;
+    NSats2 = positions2.NSats;
+else
+    Lat2 = nan(n_points,1);
+    Lng2 = nan(n_points,1);
+    Alt2 = nan(n_points,1);
+    HDop2 = nan(n_points,1);
+    NSats2 = nan(n_points,1);
+end
 
 accX = IMU_acc.AccX;
 accY = IMU_acc.AccY;
@@ -83,6 +108,14 @@ accY_resampled = interp1(time_imu, accY_filtered, time_gps, 'linear');
 accZ_resampled = interp1(time_imu, accZ_filtered, time_gps, 'linear');
 
 yaw_resampled = interp1(linspace(start_time, end_time, length(yaw)), yaw, time_gps, 'linear');
+
+% Distance diff
+wgs84 = wgs84Ellipsoid;
+dst_dff = zeros(n_points-1, 1);
+
+for i = 2:n_points
+    dst_dff(i-1) = distance(Lat1(i-1), Lng1(i-1), Lat1(i), Lng1(i), wgs84);
+end
 
 % 1. Latitude
 figure;
@@ -159,8 +192,10 @@ ylabel('AccZ (m/s^2)');
 title('Acc Z');
 legend;
 
+% 9. Distance differences between GPS1 points
 subplot(9,1,9);
-plot(time_gps, yaw_resampled, 'DisplayName', 'Yaw');
-ylabel('Yaw');
-title('Yaw');
+bar(time(1:end-1), dst_dff, 'DisplayName', 'Distance Diff (GPS1)');
+xlabel('Time (s)');
+ylabel('Distance Diff (m)');
+title('Distance Difference by GPS');
 legend;
