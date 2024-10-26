@@ -1,5 +1,5 @@
 # gps log viewer with MATLAB
-## Uses model
+## 🔧 Uses model 🔧
 UAV Toolbox
 
 ## Goal
