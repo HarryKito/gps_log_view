@@ -8,7 +8,7 @@ lat = [];
 lng = [];
 alt = [];
 
-binary_log_file = "Research/fail.bin";
+binary_log_file = "gps_log_view/Research/fail.bin";
 
 bin = ardupilotreader(binary_log_file);
 

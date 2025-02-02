@@ -2,7 +2,7 @@
 Fs = 100;  % Assumed IMU sample rate (Hz)
 Fc = 5;    % Cutoff frequency for low-pass filter (Hz)
 
-binary_log_file = "Research/fail.bin";
+binary_log_file = "gps_log_view/Research/fail.bin";
 bin = ardupilotreader(binary_log_file);
  % ----------------------------------- %
 % IMU
@@ -74,13 +74,13 @@ time_gps = linspace(start_time, end_time, n_points);
 time_imu = linspace(start_time, end_time, length(accX));
 
 % lowpass filters
-accX_filtered = lowpass(accX, Fc, Fs);
-accY_filtered = lowpass(accY, Fc, Fs);
-accZ_filtered = lowpass(accZ, Fc, Fs);
+% accX_filtered = lowpass(accX, Fc, Fs);
+% accY_filtered = lowpass(accY, Fc, Fs);
+% accZ_filtered = lowpass(accZ, Fc, Fs);
 % resample to match GPS
-accX_resampled = interp1(time_imu, accX_filtered, time_gps, 'linear');
-accY_resampled = interp1(time_imu, accY_filtered, time_gps, 'linear');
-accZ_resampled = interp1(time_imu, accZ_filtered, time_gps, 'linear');
+accX_resampled = interp1(time_imu, accX, time_gps, 'linear');
+accY_resampled = interp1(time_imu, accY, time_gps, 'linear');
+accZ_resampled = interp1(time_imu, accZ, time_gps, 'linear');
 
 yaw_resampled = interp1(linspace(start_time, end_time, length(yaw)), yaw, time_gps, 'linear');
 
